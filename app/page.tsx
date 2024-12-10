@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useChat } from 'ai/react'
 import QuickPrompts from './components/chat/QuickPrompts'
 import { DarkModeToggle } from './components/DarkModeToggle'
+import BubbleLoader from './components/chat/BubbleLoader'
 
 interface Message {
   id: string
@@ -26,11 +27,17 @@ const Bubble: React.FC<BubbleProps> = ({ role, content }) => (
 )
 
 export default function Home() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat()
+  const { append, messages, input, handleInputChange, handleSubmit, isLoading } = useChat()
   
 
   const handleQuickPrompt = (prompt: string) => {
-    handleInputChange({ target: { value: prompt } } as React.ChangeEvent<HTMLTextAreaElement>)    
+    // handleInputChange({ target: { value: prompt } } as React.ChangeEvent<HTMLTextAreaElement>)    
+    const msg :Message = {
+      id : crypto.randomUUID(),
+      content : prompt,
+      role : 'user'
+    }
+    append(msg)
   }
 
   return (
@@ -58,10 +65,17 @@ export default function Home() {
           {messages.map((message: Message) => (
             <Bubble key={message.id} {...message} />
           ))}
+           {isLoading && (
+            <li className="flex gap-x-2 sm:gap-x-4">
+              <div className="grow max-w-[90%] md:max-w-2xl w-full space-y-3 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+                <BubbleLoader />
+              </div>
+            </li>
+          )}
         </ul>
 
-        <div className="mt-8 sticky bottom-0 z-10 bg-white dark:bg-gray-900 bg-opacity-90 dark:bg-opacity-90 border-t border-gray-200 dark:border-gray-700 pt-4 pb-6 px-4 sm:px-6 lg:px-0">
-          <div className="max-w-4xl mx-auto">
+        <div className="mt-8 sticky bottom-0 z-10 bg-white rounded-lg dark:bg-gray-900 bg-opacity-90 dark:bg-opacity-90 border-t border-gray-200 dark:border-gray-700 pt-4 pb-6 px-4 sm:px-6 lg:px-0">
+          <div className="max-w-4xl mx-auto p-2">
             {(input.length === 0 && !isLoading) && <QuickPrompts onPromptSelect={handleQuickPrompt} />}
             <form onSubmit={handleSubmit} className="relative">
               <textarea

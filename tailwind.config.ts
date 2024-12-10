@@ -19,4 +19,5 @@ export default {
     preline
       
   ],
+  darkMode : 'class'
 } satisfies Config;

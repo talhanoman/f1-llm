@@ -9,11 +9,11 @@ const {
     ASTRA_DB_NAMESPACE,
     ASTRA_DB_APPLICATION_TOKEN,
     ASTRA_DB_COLLECTION,
-    OPEN_API_KEY
+    OPENAI_API_KEY
 } = process.env;
 
 const openai = new OpenAI({
-    apiKey: OPEN_API_KEY,
+    apiKey: OPENAI_API_KEY,
 });
 
 const f1Data = [

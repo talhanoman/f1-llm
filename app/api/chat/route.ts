@@ -8,18 +8,18 @@ const {
   ASTRA_DB_NAMESPACE,
   ASTRA_DB_APPLICATION_TOKEN,
   ASTRA_DB_COLLECTION,
-  OPEN_API_KEY,
+  OPENAI_API_KEY,
 } = process.env;
 
 // Initialize OpenAI
 const OpenAi = new OpenAI({
-  apiKey: OPEN_API_KEY!,
+  apiKey: OPENAI_API_KEY,
 });
 
 // Initialize Astra DB Client
 const client = new DataAPIClient(ASTRA_DB_APPLICATION_TOKEN!);
-const db = client.db(ASTRA_DB_API_ENDPOINT!, {
-  namespace: ASTRA_DB_NAMESPACE!,
+const db = client.db(ASTRA_DB_API_ENDPOINT, {
+  namespace: ASTRA_DB_NAMESPACE,
 });
 
 // Helper: Convert stream to string
@@ -57,7 +57,7 @@ export async function POST(req: Request): Promise<Response> {
 
     // Perform vector search on Astra DB
     try {
-      const collection = await db.collection(ASTRA_DB_COLLECTION!);
+      const collection = await db.collection(ASTRA_DB_COLLECTION);
       const cursor = await collection.find(null, {
         sort : {
             $vector  : embedding
@@ -68,7 +68,7 @@ export async function POST(req: Request): Promise<Response> {
       const documents = await cursor.toArray();
       const docsMap = documents?.map((doc: { text: string }) => doc?.text);
 
-      docContext = docsMap.join("\n"); // Combine documents for context
+      docContext = JSON.stringify(docsMap);
     } catch (err) {
       console.error("Error during Astra DB query:", err);
       return new Response(
@@ -98,25 +98,18 @@ export async function POST(req: Request): Promise<Response> {
       `,
     };
 
-    // Call OpenAI's Chat Completion API
-    const response = await OpenAi.chat.completions.create({
+     const response = await OpenAi.chat.completions.create({
       model: "gpt-4",
-      stream: true, // Enable streaming
+      stream: true, 
       messages: [template, ...messages],
     });
-
     const responseStream = response.toReadableStream();
     const responseString = await streamToString(responseStream);
-
-    return new Response(
-      JSON.stringify(
-        await streamText({
-          model: openai("gpt-4"),
-          prompt: responseString,
-        })
-      ),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    const result = streamText({
+        model: openai('gpt-4o'),
+        prompt : responseString,
+      });
+    return result.toDataStreamResponse();
   } catch (error) {
     console.error("Error:", error);
     return new Response(
